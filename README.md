@@ -1,3 +1,3 @@
 # CameraDemo   
-[参考Blog](https://www.cnblogs.com/xiaoxiaoqingyi/p/7016312.html)
-[googlesamples/android-Camera2Basic](https://github.com/googlesamples/android-Camera2Basic)
+[参考Blog-01、Android Camera 录像](https://www.cnblogs.com/xiaoxiaoqingyi/p/7016312.html)   
+[参考Blog-02、googlesamples/android-Camera2Basic](https://github.com/googlesamples/android-Camera2Basic)
