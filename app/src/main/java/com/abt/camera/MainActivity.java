@@ -1,5 +1,8 @@
 package com.abt.camera;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.PixelFormat;
 import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
@@ -7,7 +10,6 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -20,6 +22,9 @@ import com.abt.camera.util.Utils;
 import com.orhanobut.logger.Logger;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 import java.util.Timer;
@@ -48,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private Camera.Parameters mParameters;
     private List<int[]> mFpsRange;
     private Camera.Size mOptimalSize;
+    private boolean safeToTakePicture = false;
 
     private OnRecordFinishListener mRecordFinishListener = new OnRecordFinishListener() {
         @Override
@@ -61,6 +67,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @BindView(R.id.tag_start)
     ImageView mTagStart;
     @OnTouch(R.id.startBtn) boolean startBtn(View view, MotionEvent event) {
+        if (true) {
+            takePhoto();
+            return true;
+        }
+
         switch(event.getAction()){
             case MotionEvent.ACTION_DOWN :
                 if (mIsStarting) {
@@ -71,8 +82,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 break;
             case MotionEvent.ACTION_UP:
                 if (mTimeCount < 30) {
-                    Toast.makeText(MainActivity.this, "不能少于3秒！", Toast.LENGTH_SHORT).show();
-                    stopRecord();
+                    //Toast.makeText(MainActivity.this, "不能少于3秒！", Toast.LENGTH_SHORT).show();
+                    takePhoto();
+                    //stopRecord();
                 } else {
                     stopRecord();
                     if (mOnRecordFinishListener != null){
@@ -101,6 +113,19 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         Logger.d("surfaceCreated");
+        mCamera = Camera.open();//打开照相机
+        mCamera.setDisplayOrientation(90);
+        Camera.Parameters parameters = mCamera.getParameters();//给照相机设置参数
+        parameters.setPictureFormat(PixelFormat.JPEG);//设置保存格式
+        parameters.set("jpeg-quality", 100);//设置质量
+        mCamera.setParameters(parameters);//给照相机设置参数
+        try {//将照相机捕捉的画面展示到SurfaceView
+            mCamera.setPreviewDisplay(mSurfaceView.getHolder());
+            mCamera.startPreview();//开启预览
+            safeToTakePicture = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -203,6 +228,36 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         } catch (Exception e) {
             e.printStackTrace();
             releaseRecord();
+        }
+    }
+
+    //拍照
+    public void takePhoto() {
+        try {
+            if (safeToTakePicture) {
+                mCamera.takePicture(null, null, new Camera.PictureCallback() {
+                    @Override
+                    public void onPictureTaken(byte[] data, Camera camera) {
+                        //safeToTakePicture = true;
+                        //将字节数组
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                        //输出流保存数据
+                        try {
+                            String fileName = "/mnt/sdcard/DCIM/Camera/"+System.currentTimeMillis()+".png";
+                            FileOutputStream fileOutputStream = new FileOutputStream(fileName);
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 85, fileOutputStream);
+                            camera.stopPreview();
+                            camera.startPreview();
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                safeToTakePicture = false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(MainActivity.this, "拍照失败", Toast.LENGTH_SHORT).show();
         }
     }
 
