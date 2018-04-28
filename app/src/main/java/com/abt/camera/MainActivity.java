@@ -43,6 +43,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private File mVecordFile = null;// 文件
     private String mDirname;//视频存储的目录
     private int mRecordMaxTime = 100;// 一次拍摄最长时间 10秒
+    private SurfaceHolder mSurfaceHolder;
+    private Camera mCamera;
+    private Camera.Parameters mParameters;
+    private List<int[]> mFpsRange;
+    private Camera.Size mOptimalSize;
 
     private OnRecordFinishListener mRecordFinishListener = new OnRecordFinishListener() {
         @Override
@@ -78,12 +83,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         }
         return true;
     }
-
-    private SurfaceHolder mSurfaceHolder;
-    private Camera mCamera;
-    private Camera.Parameters mParameters;
-    private List<int[]> mFpsRange;
-    private Camera.Size mOptimalSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -156,8 +155,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void onError(MediaRecorder mr, int what, int extra) {
         try {
-            if (mr != null)
-                mr.reset();
+            if (mr != null) mr.reset();
         } catch (IllegalStateException e) {
             e.printStackTrace();
         } catch (Exception e) {
@@ -200,7 +198,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 //            mMediaRecorder.setCaptureRate(mFpsRange.get(0)[0]);//获取最小的每一秒录制的帧数
 
             mMediaRecorder.setOutputFile(mVecordFile.getAbsolutePath());
-
             mMediaRecorder.prepare();
             mMediaRecorder.start();
         } catch (Exception e) {
@@ -235,16 +232,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                                 stop();
                             }
                         });
-
                         if (mOnRecordFinishListener != null){
                             mOnRecordFinishListener.onRecordFinish();
                         }
-
                     }
                 }
             };
             mTimer.schedule(mTimerTask, 0, 100);
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -271,7 +265,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         // 创建文件
         try {
             mVecordFile = new File(FileDir.getAbsolutePath() + "/" + Utils.getDateNumber() +".mp4");
-            Log.d("Path:", mVecordFile.getAbsolutePath());
+            Logger.d("Path:", mVecordFile.getAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
         }
